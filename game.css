@@ -5,6 +5,7 @@
 td {
 	width: 50px;
 	height: 50px;
+	text-align: center;
 }
 
 .light-square {
@@ -13,4 +14,16 @@ td {
 
 .dark-square {
 	background-color: gray;
+}
+
+.top-player-piece {
+	font-size: 36;
+	color: black;
+	font-weight: bold;
+}
+
+.bottom-player-piece {
+	font-size: 36;
+	color: white;
+	font-weight: bold;
 }
