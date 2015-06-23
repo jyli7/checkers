@@ -28,7 +28,9 @@ Board.prototype.drawBlank = function () {
 	document.getElementById(this.wrapperId).innerHTML = tableHTML;	
 }
 
-Board.prototype.setVirtualPieces = function (topPlayer, bottomPlayer) {
+Board.prototype.setVirtualPieces = function () {
+	var topPlayer = this.topPlayer;
+	var bottomPlayer = this.bottomPlayer;
 	var countForPlacement = 0;
 	for (var i = 0; i < this.rows; i++) {
 		this.board.push([]);
@@ -46,19 +48,25 @@ Board.prototype.setVirtualPieces = function (topPlayer, bottomPlayer) {
 	}
 }
 
-Board.prototype.drawBoardWithPieces = function (topPlayer, bottomPlayer) {
+Board.prototype.drawBoardWithPieces = function () {
+	var topPlayer = this.topPlayer;
+	var bottomPlayer = this.bottomPlayer;
 	for (var i = 0; i < this.rows; i++) {
 		for (var j = 0; j < this.rows; j++) {
 			if (this.board[i][j].owner === topPlayer) {
 				document.getElementById(i + '-' + j).innerHTML = "<div class='top-player-piece'>O</div>";
 			} else if (this.board[i][j].owner === bottomPlayer) {
 				document.getElementById(i + '-' + j).innerHTML = "<div class='bottom-player-piece'>O</div>";
+			} else {
+				document.getElementById(i + '-' + j).innerHTML = "<div></div>";
 			}
 		}
 	}
 }
 
-Board.prototype.play = function (topPlayer, bottomPlayer) {
+Board.prototype.play = function () {
+	var topPlayer = this.topPlayer;
+	var bottomPlayer = this.bottomPlayer;
 	var gameOver = false;
 	var turnCount = 0;
 	var currentPlayer;
@@ -84,6 +92,7 @@ Board.prototype.selectPiece = function (player) {
 					var j = parseInt(selectedCellCoords[1]);
 					var selectedPiece = that.board[i][j];
 					that.movePiece(selectedPiece);
+					console.log("piece selected...now move piece to valid spot!")
 				});
 			}
 		}
@@ -92,19 +101,31 @@ Board.prototype.selectPiece = function (player) {
 
 Board.prototype.movePiece = function (piece) {
 	var validDestinationSquares = this.determineValidDestinationSquares(piece);
+	var that = this;
+	var origI = piece.iPos;
+	var origJ = piece.jPos;
+	var origOwner = piece.owner;
 
 	for (var i = 0; i < validDestinationSquares.length; i++) {
-		var x = validDestinationSquares[i].iPos;
-		var y = validDestinationSquares[i].jPos;
-		var validDestinationCell = document.getElementById(x + '-' + y);
+		var possibleI = validDestinationSquares[i].iPos;
+		var possibleJ = validDestinationSquares[i].jPos;
+		var validDestinationCell = document.getElementById(possibleI + '-' + possibleJ);
 		validDestinationCell.addEventListener("click", function(e) {
-			console.log("valid!");
-		})
+			var destId = e.target.id.split("-");
+			// TODO: CONSOLIDATE REASSIGNMENT INTO ONE PLACE!
+			var destI = parseInt(destId[0]);
+			var destJ = parseInt(destId[1]);
+			piece.iPos = destI;
+			piece.jPos = destJ;
+			that.board[origI][origJ].owner = undefined;
+			that.board[destI][destJ].owner = origOwner;
+			that.drawBoardWithPieces();
+		});
 	}
 }
 
-Board.prototype.cellOnBoard = function (x, y) {
-	return (x < this.board.length && x >= 0) && (y < this.board[x].length && y >= 0)
+Board.prototype.cellOnBoard = function (i, j) {
+	return (i < this.board.length && i >= 0) && (j < this.board[i].length && j >= 0)
 }
 
 // TODO: DRY THIS UP
@@ -152,7 +173,6 @@ Board.prototype.determineValidDestinationSquares = function (piece) {
 			validSquares.push(board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1]);
 		}
 	}
-	console.log(validSquares);
 	return validSquares;
 }
 
@@ -169,8 +189,8 @@ window.onload = function () {
 	var bottomPlayer = new Player();
 	var board = new Board(8, 8, 'board-wrapper', topPlayer, bottomPlayer)
 	board.drawBlank();
-	board.setVirtualPieces(topPlayer, bottomPlayer);
-	board.drawBoardWithPieces(topPlayer, bottomPlayer);
+	board.setVirtualPieces();
+	board.drawBoardWithPieces();
 	// put this in a "game" object?
-	board.play(topPlayer, bottomPlayer);
+	board.play();
 }
