@@ -6,7 +6,12 @@ var Board = function (rows, cols, wrapperId, topPlayer, bottomPlayer) {
 	this.board = [];
 	this.topPlayer = topPlayer;
 	this.bottomPlayer = bottomPlayer;
+	this.currentPlayer = topPlayer;
+	this.selectedPiece;
+	this.validDestinationSquares;
 };
+
+Board.prototype.state = "selectPiece";
 
 Board.prototype.drawBlank = function () {
 	var tableHTML = "<table id=" + 'game-board' + ">"
@@ -54,13 +59,61 @@ Board.prototype.drawBoardWithPieces = function () {
 	for (var i = 0; i < this.rows; i++) {
 		for (var j = 0; j < this.rows; j++) {
 			if (this.board[i][j].owner === topPlayer) {
-				document.getElementById(i + '-' + j).innerHTML = "<div class='top-player-piece'>O</div>";
+				document.getElementById(i + '-' + j).innerHTML = "X";
 			} else if (this.board[i][j].owner === bottomPlayer) {
-				document.getElementById(i + '-' + j).innerHTML = "<div class='bottom-player-piece'>O</div>";
+				document.getElementById(i + '-' + j).innerHTML = "O";
 			} else {
-				document.getElementById(i + '-' + j).innerHTML = "<div></div>";
+				document.getElementById(i + '-' + j).innerHTML = "";
 			}
 		}
+	}
+}
+
+Board.prototype.setClickHandlers = function () {
+	var that = this;
+	for (var i = 0; i < this.rows; i++) {
+		for (var j = 0; j < this.rows; j++) {
+			var pieceCell = document.getElementById(i + '-' + j);
+			pieceCell.addEventListener("click", function (e) {
+				that.generalPieceCellClickedFunction(e, that.board);
+			});
+		}
+	}
+}
+
+Board.prototype.generalPieceCellClickedFunction = function (e, board) {
+	var clickedCellId = e.target.id;
+	var clickedCellCoords = clickedCellId.split("-");
+	var i = parseInt(clickedCellCoords[0]);
+	var j = parseInt(clickedCellCoords[1]);
+	if (this.state === "selectPiece") {
+		this.selectedPiece = board[i][j];
+		this.validDestinationSquares = this.determineValidDestinationSquares(this.selectedPiece);
+		this.state = "movePiece";
+		console.log("piece selected...now move piece to valid spot!")
+	} else if (this.state === "movePiece") {
+		console.log(this.validDestinationSquares);
+		// if (this.validDestinationSquares.includes(clickedCellId))
+		// var selectedPiece = this.selectedPiece;
+		// var selectedCellId = e.target.offsetParent.id;
+		// var selectedCellCoords = selectedCellId.split("-");
+		// var i = parseInt(selectedCellCoords[0]);
+		// var j = parseInt(selectedCellCoords[1]);
+		// for (var i = 0; i < validDestinationSquares.length; i++) {
+		// 	var possibleI = validDestinationSquares[i].iPos;
+		// 	var possibleJ = validDestinationSquares[i].jPos;
+		// 	var validDestinationCell = document.getElementById(possibleI + '-' + possibleJ);
+		// 	validDestinationCell.addEventListener("click", function(e) {
+		// 		var destId = e.target.id.split("-");
+		// 		// TODO: CONSOLIDATE REASSIGNMENT INTO ONE PLACE!
+		// 		var destI = parseInt(destId[0]);
+		// 		var destJ = parseInt(destId[1]);
+		// 		piece.iPos = destI;
+		// 		piece.jPos = destJ;
+		// 		that.board[origI][origJ].owner = undefined;
+		// 		that.board[destI][destJ].owner = origOwner;
+		// 	});
+		// }
 	}
 }
 
@@ -68,31 +121,24 @@ Board.prototype.play = function () {
 	var topPlayer = this.topPlayer;
 	var bottomPlayer = this.bottomPlayer;
 	var gameOver = false;
-	var turnCount = 0;
 	var currentPlayer;
-	if (turnCount % 2 == 0) {
-		currentPlayer = topPlayer;
+	this.selectAndMovePiece(currentPlayer);
+	if (this.currentPlayer === topPlayer) {
+		this.currentPlayer = bottomPlayer;
 	} else {
-		currentPlayer = bottomPlayer;
+		this.currentPlayer = topPlayer;
 	}
-	var piece = this.selectPiece(currentPlayer);
-	turnCount += 1;
 }
 
-Board.prototype.selectPiece = function (player) {
+Board.prototype.selectAndMovePiece = function () {
+	var player = this.currentPlayer;
 	var that = this;
 	for (var i = 0; i < this.rows; i++) {
 		for (var j = 0; j < this.rows; j++) {
 			if (this.board[i][j].owner === player) {
 				var pieceCell = document.getElementById(i + '-' + j);
 				pieceCell.addEventListener("click", function(e) {
-					var selectedCellId = e.target.offsetParent.id;
-					var selectedCellCoords = selectedCellId.split("-");
-					var i = parseInt(selectedCellCoords[0]);
-					var j = parseInt(selectedCellCoords[1]);
-					var selectedPiece = that.board[i][j];
-					that.movePiece(selectedPiece);
-					console.log("piece selected...now move piece to valid spot!")
+					
 				});
 			}
 		}
@@ -100,29 +146,9 @@ Board.prototype.selectPiece = function (player) {
 }
 
 Board.prototype.movePiece = function (piece) {
-	var validDestinationSquares = this.determineValidDestinationSquares(piece);
-	var that = this;
-	var origI = piece.iPos;
-	var origJ = piece.jPos;
-	var origOwner = piece.owner;
+	
 
-	for (var i = 0; i < validDestinationSquares.length; i++) {
-		var possibleI = validDestinationSquares[i].iPos;
-		var possibleJ = validDestinationSquares[i].jPos;
-		var validDestinationCell = document.getElementById(possibleI + '-' + possibleJ);
-		validDestinationCell.addEventListener("click", function(e) {
-			var destId = e.target.id.split("-");
-			// TODO: CONSOLIDATE REASSIGNMENT INTO ONE PLACE!
-			var destI = parseInt(destId[0]);
-			var destJ = parseInt(destId[1]);
-			piece.iPos = destI;
-			piece.jPos = destJ;
-			that.board[origI][origJ].owner = undefined;
-			that.board[destI][destJ].owner = origOwner;
-			that.drawBoardWithPieces();
-		});
 	}
-}
 
 Board.prototype.cellOnBoard = function (i, j) {
 	return (i < this.board.length && i >= 0) && (j < this.board[i].length && j >= 0)
@@ -190,7 +216,15 @@ window.onload = function () {
 	var board = new Board(8, 8, 'board-wrapper', topPlayer, bottomPlayer)
 	board.drawBlank();
 	board.setVirtualPieces();
-	board.drawBoardWithPieces();
-	// put this in a "game" object?
-	board.play();
+	board.setClickHandlers();
+	var then = Date.now();
+
+	board.loop = setInterval(function () {
+		board.drawBoardWithPieces();
+		board.play();
+		var now = Date.now();
+		board.loopTimeElapsed = (now - then) / 1000;
+		then = now;
+
+	}, 10); // Execute as fast as possible
 }
