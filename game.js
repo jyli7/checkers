@@ -42,9 +42,9 @@ Board.prototype.setVirtualPieces = function () {
 		this.board.push([]);
 		countForPlacement += 1;
 		for (var j = 0; j < this.rows; j++) {
-			if (i < 3 && countForPlacement % 2 == 0) {
+			if (i < (this.rows / 2 - 1) && countForPlacement % 2 == 0) {
 				this.board[this.board.length - 1].push(new Piece(topPlayer, i, j));
-			} else if (i >= this.rows - 3 && countForPlacement % 2 == 0) {
+			} else if (i >= (this.rows - (this.rows / 2 - 1)) && countForPlacement % 2 == 0) {
 				this.board[this.board.length - 1].push(new Piece(bottomPlayer, i, j));
 			} else {
 				this.board[this.board.length - 1].push(new Piece(undefined, i, j));
@@ -58,7 +58,7 @@ Board.prototype.drawBoardWithPieces = function () {
 	var topPlayer = this.topPlayer;
 	var bottomPlayer = this.bottomPlayer;
 	for (var i = 0; i < this.rows; i++) {
-		for (var j = 0; j < this.rows; j++) {
+		for (var j = 0; j < this.cols; j++) {
 			if (this.board[i][j].owner === topPlayer) {
 				document.getElementById(i + '-' + j).innerHTML = "X";
 			} else if (this.board[i][j].owner === bottomPlayer) {
@@ -69,6 +69,33 @@ Board.prototype.drawBoardWithPieces = function () {
 		}
 	}
 }
+
+Board.prototype.returnLoser = function () {
+	var topPlayer = this.topPlayer;
+	var bottomPlayer = this.bottomPlayer;
+	var topPlayerAlive = false;
+	var bottomPlayerAlive = false;
+
+	for (var i = 0; i < this.rows; i++) {
+		for (var j = 0; j < this.cols; j++) {
+			if (this.board[i][j].owner === topPlayer) {
+				topPlayerAlive = true;
+			} else if (this.board[i][j].owner === bottomPlayer) {
+				bottomPlayerAlive = true;
+			}
+		}
+	}
+
+	if (!topPlayerAlive) {
+		return topPlayer;
+	} else if (!bottomPlayerAlive) {
+		return bottomPlayer
+	} else {
+		return undefined;
+	}
+}
+
+
 
 Board.prototype.setClickHandlers = function () {
 	var that = this;
@@ -130,13 +157,6 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 			higherLevelBoard.state = "selectPiece";
 		}
 	}
-}
-
-Board.prototype.clearCells = function () {
-	var board = this.board;
-	this.cellsToClear.forEach(function (pieceToClear) {
-		board[pieceToClear.iPos][pieceToClear.jPos].owner = undefined;
-	});
 }
 
 Board.prototype.switchPlayer = function () {
@@ -226,7 +246,7 @@ function looseContains(a, obj) {
 window.onload = function () {
 	var topPlayer = new Player('top');
 	var bottomPlayer = new Player('bottom');
-	var board = new Board(8, 8, 'board-wrapper', topPlayer, bottomPlayer)
+	var board = new Board(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
 	board.drawBlank();
 	board.setVirtualPieces();
 	board.setClickHandlers();
@@ -235,6 +255,11 @@ window.onload = function () {
 	board.loop = setInterval(function () {
 		board.drawBoardWithPieces();
 		board.drawCurrentPlayer();
+		var loser = board.returnLoser();
+		if (loser !== undefined) {
+			console.log("GAME OVER")
+			board.state = "gameOver";
+		}
 		var now = Date.now();
 		board.loopTimeElapsed = (now - then) / 1000;
 		then = now;
