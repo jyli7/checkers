@@ -151,6 +151,20 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 					}
 				}
 			}
+
+			// If we're at the back of the board, king the piece
+			if (higherLevelBoard.selectedPiece.owner === higherLevelBoard.topPlayer) {
+				if (i === higherLevelBoard.rows - 1) {
+					board[i][j].king = true;
+				}
+			}
+
+			if (higherLevelBoard.selectedPiece.owner === higherLevelBoard.bottomPlayer) {
+				if (i === 0) {
+					board[i][j].king = true;
+				}
+			}
+
 			board[origI][origJ].owner = undefined;
 			board[i][j].owner = origOwner;
 			higherLevelBoard.switchPlayer();
@@ -179,6 +193,7 @@ Board.prototype.determineValidDestinationSquares = function (piece) {
 	var opposingPlayer;
 	var moveDirection;
 	var board = this.board;
+
 	if (piece.owner === this.topPlayer) {
 		opposingPlayer = this.bottomPlayer;	
 		moveDirectionI = 1;
@@ -203,19 +218,16 @@ Board.prototype.determineValidDestinationSquares = function (piece) {
 	}
 
 	// If jump is possible, MUST jump
-	if (validSquares.length > 0) {
-		return validSquares;
-	} else {
-		if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1) &&
-				board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === undefined) {
-			validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1]);
-		}
-
-		if (this.cellOnBoard(piece.iPos + 1  * moveDirectionI, piece.jPos - 1) &&
-				board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1].owner === undefined) {
-			validSquares.push(board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1]);
-		}
+	if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1) &&
+			board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === undefined) {
+		validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1]);
 	}
+
+	if (this.cellOnBoard(piece.iPos + 1  * moveDirectionI, piece.jPos - 1) &&
+			board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1].owner === undefined) {
+		validSquares.push(board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1]);
+	}
+
 	return validSquares;
 }
 
@@ -227,6 +239,7 @@ var Piece = function (owner, iPos, jPos) {
 	this.owner = owner;
 	this.iPos = iPos;
 	this.jPos = jPos;
+	this.king = false;
 }
 
 var Player = function (name) {
@@ -246,7 +259,7 @@ function looseContains(a, obj) {
 window.onload = function () {
 	var topPlayer = new Player('top');
 	var bottomPlayer = new Player('bottom');
-	var board = new Board(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
+	var board = new Board(8, 8, 'board-wrapper', topPlayer, bottomPlayer)
 	board.drawBlank();
 	board.setVirtualPieces();
 	board.setClickHandlers();
