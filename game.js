@@ -90,9 +90,13 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 	console.log("piece clicked");
 	if (higherLevelBoard.state === "selectPiece") {
 		higherLevelBoard.selectedPiece = board[i][j];
-		higherLevelBoard.validDestinationSquares = this.determineValidDestinationSquares(this.selectedPiece);
-		higherLevelBoard.state = "movePiece";
-		console.log("piece selected...now move piece to valid spot!")
+		if (higherLevelBoard.currentPlayer === higherLevelBoard.selectedPiece.owner) {
+			higherLevelBoard.validDestinationSquares = this.determineValidDestinationSquares(this.selectedPiece);
+			higherLevelBoard.state = "movePiece";
+			console.log("piece selected...now move piece to valid spot!")
+		} else {
+			console.log("not your piece!")
+		}
 	} else if (higherLevelBoard.state === "movePiece") {
 		console.log("move piece click")
 		var validDestinationSquaresCoords = higherLevelBoard.validDestinationSquares.map(function (obj) {
@@ -171,6 +175,10 @@ Board.prototype.determineValidDestinationSquares = function (piece) {
 	return validSquares;
 }
 
+Board.prototype.drawCurrentPlayer = function () {
+	document.getElementById('current-player-wrapper').innerHTML = this.currentPlayer.name;
+}
+
 var Piece = function (owner, iPos, jPos) {
 	this.owner = owner;
 	this.iPos = iPos;
@@ -179,7 +187,6 @@ var Piece = function (owner, iPos, jPos) {
 
 var Player = function (name) {
 	this.name = name;
-
 };
 
 function looseContains(a, obj) {
@@ -203,6 +210,7 @@ window.onload = function () {
 
 	board.loop = setInterval(function () {
 		board.drawBoardWithPieces();
+		board.drawCurrentPlayer();
 		var now = Date.now();
 		board.loopTimeElapsed = (now - then) / 1000;
 		then = now;

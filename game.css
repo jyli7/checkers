@@ -27,3 +27,7 @@ td {
 	color: white;
 	font-weight: bold;
 }
+
+#current-player-wrapper {
+	float: right;
+}
