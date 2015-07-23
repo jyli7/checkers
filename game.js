@@ -75,80 +75,49 @@ Board.prototype.setClickHandlers = function () {
 		for (var j = 0; j < this.rows; j++) {
 			var pieceCell = document.getElementById(i + '-' + j);
 			pieceCell.addEventListener("click", function (e) {
-				that.generalPieceCellClickedFunction(e, that.board);
+				that.generalPieceCellClickedFunction(e, that);
 			});
 		}
 	}
 }
 
-Board.prototype.generalPieceCellClickedFunction = function (e, board) {
+Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard) {
+	var board = higherLevelBoard.board;
 	var clickedCellId = e.target.id;
 	var clickedCellCoords = clickedCellId.split("-");
 	var i = parseInt(clickedCellCoords[0]);
 	var j = parseInt(clickedCellCoords[1]);
-	if (this.state === "selectPiece") {
-		this.selectedPiece = board[i][j];
-		this.validDestinationSquares = this.determineValidDestinationSquares(this.selectedPiece);
-		this.state = "movePiece";
+	console.log("piece clicked");
+	if (higherLevelBoard.state === "selectPiece") {
+		higherLevelBoard.selectedPiece = board[i][j];
+		higherLevelBoard.validDestinationSquares = this.determineValidDestinationSquares(this.selectedPiece);
+		higherLevelBoard.state = "movePiece";
 		console.log("piece selected...now move piece to valid spot!")
-	} else if (this.state === "movePiece") {
-		console.log(this.validDestinationSquares);
-		// if (this.validDestinationSquares.includes(clickedCellId))
-		// var selectedPiece = this.selectedPiece;
-		// var selectedCellId = e.target.offsetParent.id;
-		// var selectedCellCoords = selectedCellId.split("-");
-		// var i = parseInt(selectedCellCoords[0]);
-		// var j = parseInt(selectedCellCoords[1]);
-		// for (var i = 0; i < validDestinationSquares.length; i++) {
-		// 	var possibleI = validDestinationSquares[i].iPos;
-		// 	var possibleJ = validDestinationSquares[i].jPos;
-		// 	var validDestinationCell = document.getElementById(possibleI + '-' + possibleJ);
-		// 	validDestinationCell.addEventListener("click", function(e) {
-		// 		var destId = e.target.id.split("-");
-		// 		// TODO: CONSOLIDATE REASSIGNMENT INTO ONE PLACE!
-		// 		var destI = parseInt(destId[0]);
-		// 		var destJ = parseInt(destId[1]);
-		// 		piece.iPos = destI;
-		// 		piece.jPos = destJ;
-		// 		that.board[origI][origJ].owner = undefined;
-		// 		that.board[destI][destJ].owner = origOwner;
-		// 	});
-		// }
-	}
-}
-
-Board.prototype.play = function () {
-	var topPlayer = this.topPlayer;
-	var bottomPlayer = this.bottomPlayer;
-	var gameOver = false;
-	var currentPlayer;
-	this.selectAndMovePiece(currentPlayer);
-	if (this.currentPlayer === topPlayer) {
-		this.currentPlayer = bottomPlayer;
-	} else {
-		this.currentPlayer = topPlayer;
-	}
-}
-
-Board.prototype.selectAndMovePiece = function () {
-	var player = this.currentPlayer;
-	var that = this;
-	for (var i = 0; i < this.rows; i++) {
-		for (var j = 0; j < this.rows; j++) {
-			if (this.board[i][j].owner === player) {
-				var pieceCell = document.getElementById(i + '-' + j);
-				pieceCell.addEventListener("click", function(e) {
-					
-				});
-			}
+	} else if (higherLevelBoard.state === "movePiece") {
+		console.log("move piece click")
+		var validDestinationSquaresCoords = higherLevelBoard.validDestinationSquares.map(function (obj) {
+			return [obj.iPos, obj.jPos];
+		});
+		console.log(validDestinationSquaresCoords);
+		if (looseContains(validDestinationSquaresCoords, [i, j])) {
+			var origOwner = higherLevelBoard.selectedPiece.owner;
+			var origI = higherLevelBoard.selectedPiece.iPos;
+			var origJ = higherLevelBoard.selectedPiece.jPos;
+			board[origI][origJ].owner = undefined;
+			board[i][j].owner = origOwner;
+			higherLevelBoard.switchPlayer();
+			higherLevelBoard.state = "selectPiece";
 		}
 	}
 }
 
-Board.prototype.movePiece = function (piece) {
-	
-
+Board.prototype.switchPlayer = function () {
+	if (this.currentPlayer === this.topPlayer) {
+		this.currentPlayer = this.bottomPlayer;
+	} else {
+		this.currentPlayer = this.topPlayer;
 	}
+}
 
 Board.prototype.cellOnBoard = function (i, j) {
 	return (i < this.board.length && i >= 0) && (j < this.board[i].length && j >= 0)
@@ -175,14 +144,14 @@ Board.prototype.determineValidDestinationSquares = function (piece) {
 			this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos + 2) &&
 		  board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === opposingPlayer &&
 		  board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2].owner === undefined) {
-		validSquares.push([piece.iPos + 2, piece.jPos + 2]);
+		validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2]);
 	}
 
 	if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos - 1) &&
 			this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos - 2) &&
 			board[piece.iPos + 1 * moveDirectionI][piece.jPos - 1].owner === opposingPlayer &&
 		  board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2].owner === undefined) {
-		validSquares.push([piece.iPos + 2 * moveDirectionI, piece.jPos - 2]);
+		validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2]);
 	}
 
 	// If jump is possible, MUST jump
@@ -208,11 +177,24 @@ var Piece = function (owner, iPos, jPos) {
 	this.jPos = jPos;
 }
 
-var Player = function () {};
+var Player = function (name) {
+	this.name = name;
+
+};
+
+function looseContains(a, obj) {
+    var i = a.length;
+    while (i--) {
+       if (a[i].toString() == obj.toString()) {
+           return true;
+       }
+    }
+    return false;
+}
 
 window.onload = function () {
-	var topPlayer = new Player();
-	var bottomPlayer = new Player();
+	var topPlayer = new Player('top');
+	var bottomPlayer = new Player('bottom');
 	var board = new Board(8, 8, 'board-wrapper', topPlayer, bottomPlayer)
 	board.drawBlank();
 	board.setVirtualPieces();
@@ -221,10 +203,8 @@ window.onload = function () {
 
 	board.loop = setInterval(function () {
 		board.drawBoardWithPieces();
-		board.play();
 		var now = Date.now();
 		board.loopTimeElapsed = (now - then) / 1000;
 		then = now;
-
 	}, 10); // Execute as fast as possible
 }
