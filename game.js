@@ -9,6 +9,7 @@ var Board = function (rows, cols, wrapperId, topPlayer, bottomPlayer) {
 	this.currentPlayer = topPlayer;
 	this.selectedPiece;
 	this.validDestinationSquares;
+	this.cellsToClear = [];
 };
 
 Board.prototype.state = "selectPiece";
@@ -107,12 +108,35 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 			var origOwner = higherLevelBoard.selectedPiece.owner;
 			var origI = higherLevelBoard.selectedPiece.iPos;
 			var origJ = higherLevelBoard.selectedPiece.jPos;
+			// If we're jumping, clear the opponent's piece
+			if (Math.abs(i - origI) > 1) {
+				if (i < origI) {
+					if (j < origJ) {
+						board[i + 1][j + 1].owner = undefined;
+					} else if (j > origJ) {
+						board[i + 1][j - 1].owner = undefined;
+					}
+				} else {
+					if (j < origJ) {
+						board[i - 1][j + 1].owner = undefined;
+					} else if (j > origJ) {
+						board[i - 1][j - 1].owner = undefined;
+					}
+				}
+			}
 			board[origI][origJ].owner = undefined;
 			board[i][j].owner = origOwner;
 			higherLevelBoard.switchPlayer();
 			higherLevelBoard.state = "selectPiece";
 		}
 	}
+}
+
+Board.prototype.clearCells = function () {
+	var board = this.board;
+	this.cellsToClear.forEach(function (pieceToClear) {
+		board[pieceToClear.iPos][pieceToClear.jPos].owner = undefined;
+	});
 }
 
 Board.prototype.switchPlayer = function () {
