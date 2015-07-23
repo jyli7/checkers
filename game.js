@@ -133,6 +133,7 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 		console.log(validDestinationSquaresCoords);
 		if (looseContains(validDestinationSquaresCoords, [i, j])) {
 			var origOwner = higherLevelBoard.selectedPiece.owner;
+			var origKing = higherLevelBoard.selectedPiece.king;
 			var origI = higherLevelBoard.selectedPiece.iPos;
 			var origJ = higherLevelBoard.selectedPiece.jPos;
 			// If we're jumping, clear the opponent's piece
@@ -152,15 +153,18 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 				}
 			}
 
+			board[origI][origJ].king = false;
+			board[i][j].king = origKing;
+
 			// If we're at the back of the board, king the piece
 			if (higherLevelBoard.selectedPiece.owner === higherLevelBoard.topPlayer) {
 				if (i === higherLevelBoard.rows - 1) {
+					console.log("kinged!");
 					board[i][j].king = true;
 				}
-			}
-
-			if (higherLevelBoard.selectedPiece.owner === higherLevelBoard.bottomPlayer) {
+			} else if (higherLevelBoard.selectedPiece.owner === higherLevelBoard.bottomPlayer) {
 				if (i === 0) {
+					console.log("kinged!");
 					board[i][j].king = true;
 				}
 			}
@@ -217,7 +221,6 @@ Board.prototype.determineValidDestinationSquares = function (piece) {
 		validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2]);
 	}
 
-	// If jump is possible, MUST jump
 	if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1) &&
 			board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === undefined) {
 		validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1]);
@@ -226,6 +229,35 @@ Board.prototype.determineValidDestinationSquares = function (piece) {
 	if (this.cellOnBoard(piece.iPos + 1  * moveDirectionI, piece.jPos - 1) &&
 			board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1].owner === undefined) {
 		validSquares.push(board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1]);
+	}
+
+	// TODO: GET RID OF THIS REDUNDANCY
+	if (piece.king === true) {
+		moveDirectionI *= -1;
+		// Check if jump is possible
+		if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1) &&
+				this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos + 2) &&
+			  board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === opposingPlayer &&
+			  board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2].owner === undefined) {
+			validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2]);
+		}
+
+		if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos - 1) &&
+				this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos - 2) &&
+				board[piece.iPos + 1 * moveDirectionI][piece.jPos - 1].owner === opposingPlayer &&
+			  board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2].owner === undefined) {
+			validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2]);
+		}
+
+		if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1) &&
+				board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === undefined) {
+			validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1]);
+		}
+
+		if (this.cellOnBoard(piece.iPos + 1  * moveDirectionI, piece.jPos - 1) &&
+				board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1].owner === undefined) {
+			validSquares.push(board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1]);
+		}
 	}
 
 	return validSquares;
@@ -259,7 +291,7 @@ function looseContains(a, obj) {
 window.onload = function () {
 	var topPlayer = new Player('top');
 	var bottomPlayer = new Player('bottom');
-	var board = new Board(8, 8, 'board-wrapper', topPlayer, bottomPlayer)
+	var board = new Board(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
 	board.drawBlank();
 	board.setVirtualPieces();
 	board.setClickHandlers();
