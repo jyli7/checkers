@@ -33,6 +33,7 @@ var Board = function (rows, cols, wrapperId, topPlayer, bottomPlayer) {
 	this.selectedPiece;
 	this.validDestinationSquares;
 	this.cellsToClear = [];
+	this.validDestinationCoordsForSelected;
 };
 
 Board.prototype.state = "selectPiece";
@@ -145,19 +146,16 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 			higherLevelBoard.state = "movePiece";
 			var selectedCell = $('#' + i + "-" + j);
 			selectedCell.addClass('selected');
-			console.log("piece selected...now move piece to valid spot!")
-		} else {
-			console.log("not your piece!")
+			board.validDestinationCoordsForSelected = higherLevelBoard.validDestinationSquares.map(function (obj) {
+				return [obj.iPos, obj.jPos];
+			});
+			board.validDestinationCoordsForSelected.forEach(function (coords) {
+				var possibleDestinationCell = $('#' + coords[0] + "-" + coords[1]);
+				possibleDestinationCell.addClass("possibleDestination");
+			});
 		}
 	} else if (higherLevelBoard.state === "movePiece") {
-		console.log("move piece click")
-		// TODO: Add a little flash here
-
-		var validDestinationSquaresCoords = higherLevelBoard.validDestinationSquares.map(function (obj) {
-			return [obj.iPos, obj.jPos];
-		});
-
-		if (looseContains(validDestinationSquaresCoords, [i, j])) {
+		if (looseContains(board.validDestinationCoordsForSelected, [i, j])) {
 			var origOwner = higherLevelBoard.selectedPiece.owner;
 			var origKing = higherLevelBoard.selectedPiece.king;
 			var origI = higherLevelBoard.selectedPiece.iPos;
@@ -200,6 +198,13 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 			higherLevelBoard.switchPlayer();
 			higherLevelBoard.state = "selectPiece";
 			$('.selected').removeClass('selected');
+			$('.possibleDestination').removeClass('possibleDestination');
+		} else if (higherLevelBoard.selectedPiece.iPos === i && higherLevelBoard.selectedPiece.jPos === j) {
+			console.log("here");
+			$('.selected').removeClass('selected');
+			$('.possibleDestination').removeClass('possibleDestination');
+			higherLevelBoard.selectedPiece = undefined;
+			higherLevelBoard.state = "selectPiece";
 		}
 	}
 

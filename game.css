@@ -10,13 +10,19 @@ td {
 
 .light-square {
 	background-color: red;
+	cursor: pointer;
 }
 
 .dark-square {
 	background-color: gray;
+	cursor: pointer;
 }
 
 .selected {
+	background-color: yellow;
+}
+
+.possibleDestination {
 	background-color: green;
 }
 
