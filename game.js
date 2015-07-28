@@ -1,3 +1,26 @@
+window.onload = function () {
+	var topPlayer = new Player('top');
+	var bottomPlayer = new Player('bottom');
+	var board = new Board(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
+	board.drawBlank();
+	board.setPiecesWithoutDrawing();
+	board.setClickHandlers();
+	var then = Date.now();
+
+	board.loop = setInterval(function () {
+		board.drawBoardWithPieces();
+		board.drawCurrentPlayerName();
+		var loser = board.returnLoser();
+		if (loser !== undefined) {
+			console.log("GAME OVER")
+			board.state = "gameOver";
+		}
+		var now = Date.now();
+		board.loopTimeElapsed = (now - then) / 1000;
+		then = now;
+	}, 10); // Execute as fast as possible
+}
+
 var Board = function (rows, cols, wrapperId, topPlayer, bottomPlayer) {
 	this.rows = rows;
 	this.cols = cols;
@@ -34,7 +57,7 @@ Board.prototype.drawBlank = function () {
 	document.getElementById(this.wrapperId).innerHTML = tableHTML;	
 }
 
-Board.prototype.setVirtualPieces = function () {
+Board.prototype.setPiecesWithoutDrawing = function () {
 	var topPlayer = this.topPlayer;
 	var bottomPlayer = this.bottomPlayer;
 	var countForPlacement = 0;
@@ -95,8 +118,6 @@ Board.prototype.returnLoser = function () {
 	}
 }
 
-
-
 Board.prototype.setClickHandlers = function () {
 	var that = this;
 	for (var i = 0; i < this.rows; i++) {
@@ -115,22 +136,27 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 	var clickedCellCoords = clickedCellId.split("-");
 	var i = parseInt(clickedCellCoords[0]);
 	var j = parseInt(clickedCellCoords[1]);
-	console.log("piece clicked");
+
+
 	if (higherLevelBoard.state === "selectPiece") {
 		higherLevelBoard.selectedPiece = board[i][j];
 		if (higherLevelBoard.currentPlayer === higherLevelBoard.selectedPiece.owner) {
-			higherLevelBoard.validDestinationSquares = this.determineValidDestinationSquares(this.selectedPiece);
+			higherLevelBoard.validDestinationSquares = this.allValidDestinationSquaresFor(this.selectedPiece);
 			higherLevelBoard.state = "movePiece";
+			var selectedCell = $('#' + i + "-" + j);
+			selectedCell.addClass('selected');
 			console.log("piece selected...now move piece to valid spot!")
 		} else {
 			console.log("not your piece!")
 		}
 	} else if (higherLevelBoard.state === "movePiece") {
 		console.log("move piece click")
+		// TODO: Add a little flash here
+
 		var validDestinationSquaresCoords = higherLevelBoard.validDestinationSquares.map(function (obj) {
 			return [obj.iPos, obj.jPos];
 		});
-		console.log(validDestinationSquaresCoords);
+
 		if (looseContains(validDestinationSquaresCoords, [i, j])) {
 			var origOwner = higherLevelBoard.selectedPiece.owner;
 			var origKing = higherLevelBoard.selectedPiece.king;
@@ -173,8 +199,10 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 			board[i][j].owner = origOwner;
 			higherLevelBoard.switchPlayer();
 			higherLevelBoard.state = "selectPiece";
+			$('.selected').removeClass('selected');
 		}
 	}
+
 }
 
 Board.prototype.switchPlayer = function () {
@@ -239,7 +267,7 @@ Board.prototype.jumpsAndMovesFor = function(piece, moveDirectionI) {
 }
 
 // TODO: DRY THIS UP
-Board.prototype.determineValidDestinationSquares = function (piece) {
+Board.prototype.allValidDestinationSquaresFor = function (piece) {
 	// Basic top player pieces can only move downward,
 	// Basic bottom player can only move upward
 	var validSquares = [];
@@ -261,7 +289,7 @@ Board.prototype.determineValidDestinationSquares = function (piece) {
 	return validSquares;
 }
 
-Board.prototype.drawCurrentPlayer = function () {
+Board.prototype.drawCurrentPlayerName = function () {
 	document.getElementById('current-player-wrapper').innerHTML = this.currentPlayer.name;
 }
 
@@ -286,25 +314,3 @@ function looseContains(a, obj) {
     return false;
 }
 
-window.onload = function () {
-	var topPlayer = new Player('top');
-	var bottomPlayer = new Player('bottom');
-	var board = new Board(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
-	board.drawBlank();
-	board.setVirtualPieces();
-	board.setClickHandlers();
-	var then = Date.now();
-
-	board.loop = setInterval(function () {
-		board.drawBoardWithPieces();
-		board.drawCurrentPlayer();
-		var loser = board.returnLoser();
-		if (loser !== undefined) {
-			console.log("GAME OVER")
-			board.state = "gameOver";
-		}
-		var now = Date.now();
-		board.loopTimeElapsed = (now - then) / 1000;
-		then = now;
-	}, 10); // Execute as fast as possible
-}

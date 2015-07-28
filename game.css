@@ -16,6 +16,10 @@ td {
 	background-color: gray;
 }
 
+.selected {
+	background-color: green;
+}
+
 .top-player-piece {
 	font-size: 36;
 	color: black;
