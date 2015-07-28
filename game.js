@@ -211,6 +211,33 @@ Board.prototype.canSimpleMove = function (piece, moveDirectionI, moveDirectionJ)
 		board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1 * moveDirectionJ].owner === undefined
 }
 
+Board.prototype.jumpsAndMovesFor = function(piece, moveDirectionI) {
+	var validSquares = [];
+	var board = this.board;
+
+	// Jump right
+	if (this.canJump(piece, moveDirectionI, 1)) {
+		validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2]);
+	}
+
+	// Jump left
+	if (this.canJump(piece, moveDirectionI, -1)) {
+		validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2]);
+	}
+
+	// Move right
+	if (this.canSimpleMove(piece, moveDirectionI, 1)) {
+		validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1]);
+	}
+
+	// Move left
+	if (this.canSimpleMove(piece, moveDirectionI, -1)) {
+		validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos - 1]);
+	}
+
+	return validSquares
+}
+
 // TODO: DRY THIS UP
 Board.prototype.determineValidDestinationSquares = function (piece) {
 	// Basic top player pieces can only move downward,
@@ -225,41 +252,10 @@ Board.prototype.determineValidDestinationSquares = function (piece) {
 		moveDirectionI = -1;
 	}
 
-	if (this.canJump(piece, moveDirectionI, 1)) {
-		validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2]);
-	}
-
-	if (this.canJump(piece, moveDirectionI, -1)) {
-		validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2]);
-	}
-
-	if (this.canSimpleMove(piece, moveDirectionI, 1)) {
-		validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1]);
-	}
-
-	if (this.canSimpleMove(piece, moveDirectionI, -1)) {
-		validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos - 1]);
-	}
-
-	// TODO: GET RID OF THIS REDUNDANCY
+	validSquares = validSquares.concat(this.jumpsAndMovesFor(piece, moveDirectionI))
 	if (piece.king === true) {
-
 		moveDirectionI *= -1;
-		if (this.canJump(piece, moveDirectionI, 1)) {
-			validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2]);
-		}
-
-		if (this.canJump(piece, moveDirectionI, -1)) {
-			validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2]);
-		}
-
-		if (this.canSimpleMove(piece, moveDirectionI, 1)) {
-			validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1]);
-		}
-
-		if (this.canSimpleMove(piece, moveDirectionI, -1)) {
-			validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos - 1]);
-		}
+		validSquares = validSquares.concat(this.jumpsAndMovesFor(piece, moveDirectionI))
 	}
 
 	return validSquares;
