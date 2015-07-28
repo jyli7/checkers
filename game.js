@@ -189,74 +189,76 @@ Board.prototype.cellOnBoard = function (i, j) {
 	return (i < this.board.length && i >= 0) && (j < this.board[i].length && j >= 0)
 }
 
+Board.prototype.canJump = function (piece, moveDirectionI, moveDirectionJ) {
+	var board = this.board;
+	var opposingPlayer;
+	if (piece.owner === this.topPlayer) {
+		opposingPlayer = this.bottomPlayer;	
+	} else {
+		opposingPlayer = this.topPlayer;
+	}
+
+	return this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1 * moveDirectionJ) &&
+		this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos + 2 * moveDirectionJ) &&
+	  board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1 * moveDirectionJ].owner === opposingPlayer &&
+	  board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2 * moveDirectionJ].owner === undefined
+}
+
+Board.prototype.canSimpleMove = function (piece, moveDirectionI, moveDirectionJ) {
+	var board = this.board;
+
+	return this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1 * moveDirectionJ) &&
+		board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1 * moveDirectionJ].owner === undefined
+}
+
 // TODO: DRY THIS UP
 Board.prototype.determineValidDestinationSquares = function (piece) {
 	// Basic top player pieces can only move downward,
 	// Basic bottom player can only move upward
 	var validSquares = [];
-	var opposingPlayer;
 	var moveDirection;
 	var board = this.board;
 
 	if (piece.owner === this.topPlayer) {
-		opposingPlayer = this.bottomPlayer;	
 		moveDirectionI = 1;
 	} else {
-		opposingPlayer = this.topPlayer;
 		moveDirectionI = -1;
 	}
 
-	// Check if jump is possible
-	if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1) &&
-			this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos + 2) &&
-		  board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === opposingPlayer &&
-		  board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2].owner === undefined) {
+	if (this.canJump(piece, moveDirectionI, 1)) {
 		validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2]);
 	}
 
-	if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos - 1) &&
-			this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos - 2) &&
-			board[piece.iPos + 1 * moveDirectionI][piece.jPos - 1].owner === opposingPlayer &&
-		  board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2].owner === undefined) {
+	if (this.canJump(piece, moveDirectionI, -1)) {
 		validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2]);
 	}
 
-	if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1) &&
-			board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === undefined) {
+	if (this.canSimpleMove(piece, moveDirectionI, 1)) {
 		validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1]);
 	}
 
-	if (this.cellOnBoard(piece.iPos + 1  * moveDirectionI, piece.jPos - 1) &&
-			board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1].owner === undefined) {
-		validSquares.push(board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1]);
+	if (this.canSimpleMove(piece, moveDirectionI, -1)) {
+		validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos - 1]);
 	}
 
 	// TODO: GET RID OF THIS REDUNDANCY
 	if (piece.king === true) {
+
 		moveDirectionI *= -1;
-		// Check if jump is possible
-		if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1) &&
-				this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos + 2) &&
-			  board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === opposingPlayer &&
-			  board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2].owner === undefined) {
+		if (this.canJump(piece, moveDirectionI, 1)) {
 			validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2]);
 		}
 
-		if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos - 1) &&
-				this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos - 2) &&
-				board[piece.iPos + 1 * moveDirectionI][piece.jPos - 1].owner === opposingPlayer &&
-			  board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2].owner === undefined) {
+		if (this.canJump(piece, moveDirectionI, -1)) {
 			validSquares.push(board[piece.iPos + 2 * moveDirectionI][piece.jPos - 2]);
 		}
 
-		if (this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1) &&
-				board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1].owner === undefined) {
+		if (this.canSimpleMove(piece, moveDirectionI, 1)) {
 			validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1]);
 		}
 
-		if (this.cellOnBoard(piece.iPos + 1  * moveDirectionI, piece.jPos - 1) &&
-				board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1].owner === undefined) {
-			validSquares.push(board[piece.iPos + 1  * moveDirectionI][piece.jPos - 1]);
+		if (this.canSimpleMove(piece, moveDirectionI, -1)) {
+			validSquares.push(board[piece.iPos + 1 * moveDirectionI][piece.jPos - 1]);
 		}
 	}
 
