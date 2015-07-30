@@ -2,6 +2,10 @@
 	border: 1px solid black;
 }
 
+#board-wrapper {
+	float: left;
+}
+
 td {
 	width: 50px;
 	height: 50px;
@@ -39,9 +43,14 @@ td {
 }
 
 #current-player-wrapper {
-	float: right;
+	margin-left: 50px;
+	float: left;
 }
 
 .hidden {
 	display: none;
+}
+
+.reset-link {
+	display: block;
 }
