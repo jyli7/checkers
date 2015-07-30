@@ -9,11 +9,10 @@ var Player = function (name) {
 	this.name = name;
 };
 
-var Board = function (rows, cols, wrapperId, topPlayer, bottomPlayer) {
-	this.rows = rows;
-	this.cols = cols;
+var GameManager = function (numRows, numCols, wrapperId, topPlayer, bottomPlayer) {
+	this.numRows = numRows;
+	this.numCols = numCols;
 	this.wrapperId = wrapperId;
-	this.boardId = 'game-board';
 	this.board = [];
 	this.topPlayer = topPlayer;
 	this.bottomPlayer = bottomPlayer;
@@ -25,13 +24,13 @@ var Board = function (rows, cols, wrapperId, topPlayer, bottomPlayer) {
 	this.state = "selectPiece";
 };
 
-Board.prototype.drawBlank = function () {
+GameManager.prototype.drawBlankCellsOnScreen = function () {
 	var tableHTML = "<table id=" + 'game-board' + ">"
 	var countForColor = 0
-	for (var i = 0; i < this.rows; i++) {
+	for (var i = 0; i < this.numRows; i++) {
 		tableHTML += "<tr>"
 		countForColor += 1
-		for (var j = 0; j < this.cols; j++) {
+		for (var j = 0; j < this.numCols; j++) {
 			if (countForColor % 2 == 0) {
 				tableHTML += "<td class='dark-square' id='" + i + "-" + j + "'></td>"
 			} else {
@@ -45,17 +44,17 @@ Board.prototype.drawBlank = function () {
 	document.getElementById(this.wrapperId).innerHTML = tableHTML;	
 }
 
-Board.prototype.setPiecesWithoutDrawing = function () {
+GameManager.prototype.populateWithPieces = function () {
 	var topPlayer = this.topPlayer;
 	var bottomPlayer = this.bottomPlayer;
 	var countForPlacement = 0;
-	for (var i = 0; i < this.rows; i++) {
+	for (var i = 0; i < this.numRows; i++) {
 		this.board.push([]);
 		countForPlacement += 1;
-		for (var j = 0; j < this.rows; j++) {
-			if (i < (this.rows / 2 - 1) && countForPlacement % 2 == 0) {
+		for (var j = 0; j < this.numRows; j++) {
+			if (i < (this.numRows / 2 - 1) && countForPlacement % 2 == 0) {
 				this.board[this.board.length - 1].push(new Piece(topPlayer, i, j));
-			} else if (i >= (this.rows - (this.rows / 2 - 1)) && countForPlacement % 2 == 0) {
+			} else if (i >= (this.numRows - (this.numRows / 2 - 1)) && countForPlacement % 2 == 0) {
 				this.board[this.board.length - 1].push(new Piece(bottomPlayer, i, j));
 			} else {
 				this.board[this.board.length - 1].push(new Piece(undefined, i, j));
@@ -65,11 +64,23 @@ Board.prototype.setPiecesWithoutDrawing = function () {
 	}
 }
 
-Board.prototype.drawBoardWithPieces = function () {
+GameManager.prototype.setClickHandlersOnSquares = function () {
+	var that = this;
+	for (var i = 0; i < this.numRows; i++) {
+		for (var j = 0; j < this.numRows; j++) {
+			var pieceCell = document.getElementById(i + '-' + j);
+			pieceCell.addEventListener("click", function (e) {
+				that.generalPieceCellClickedFunction(e, that);
+			});
+		}
+	}
+}
+
+GameManager.prototype.drawPieces = function () {
 	var topPlayer = this.topPlayer;
 	var bottomPlayer = this.bottomPlayer;
-	for (var i = 0; i < this.rows; i++) {
-		for (var j = 0; j < this.cols; j++) {
+	for (var i = 0; i < this.numRows; i++) {
+		for (var j = 0; j < this.numCols; j++) {
 			if (this.board[i][j].owner === topPlayer) {
 				document.getElementById(i + '-' + j).innerHTML = "X";
 			} else if (this.board[i][j].owner === bottomPlayer) {
@@ -81,14 +92,14 @@ Board.prototype.drawBoardWithPieces = function () {
 	}
 }
 
-Board.prototype.returnLoser = function () {
+GameManager.prototype.returnLoser = function () {
 	var topPlayer = this.topPlayer;
 	var bottomPlayer = this.bottomPlayer;
 	var topPlayerAlive = false;
 	var bottomPlayerAlive = false;
 
-	for (var i = 0; i < this.rows; i++) {
-		for (var j = 0; j < this.cols; j++) {
+	for (var i = 0; i < this.numRows; i++) {
+		for (var j = 0; j < this.numCols; j++) {
 			if (this.board[i][j].owner === topPlayer) {
 				topPlayerAlive = true;
 			} else if (this.board[i][j].owner === bottomPlayer) {
@@ -106,19 +117,8 @@ Board.prototype.returnLoser = function () {
 	}
 }
 
-Board.prototype.setClickHandlersOnSquares = function () {
-	var that = this;
-	for (var i = 0; i < this.rows; i++) {
-		for (var j = 0; j < this.rows; j++) {
-			var pieceCell = document.getElementById(i + '-' + j);
-			pieceCell.addEventListener("click", function (e) {
-				that.generalPieceCellClickedFunction(e, that);
-			});
-		}
-	}
-}
 
-Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard) {
+GameManager.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard) {
 	var board = higherLevelBoard.board;
 	var clickedCellId = e.target.id;
 	var clickedCellCoords = clickedCellId.split("-");
@@ -169,7 +169,7 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 
 			// If we're at the back of the board, king the piece
 			if (higherLevelBoard.selectedPiece.owner === higherLevelBoard.topPlayer) {
-				if (i === higherLevelBoard.rows - 1) {
+				if (i === higherLevelBoard.numRows - 1) {
 					console.log("kinged!");
 					board[i][j].king = true;
 				}
@@ -196,7 +196,7 @@ Board.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard)
 
 }
 
-Board.prototype.switchPlayer = function () {
+GameManager.prototype.switchPlayer = function () {
 	if (this.currentPlayer === this.topPlayer) {
 		this.currentPlayer = this.bottomPlayer;
 	} else {
@@ -204,11 +204,11 @@ Board.prototype.switchPlayer = function () {
 	}
 }
 
-Board.prototype.cellOnBoard = function (i, j) {
+GameManager.prototype.cellOnBoard = function (i, j) {
 	return (i < this.board.length && i >= 0) && (j < this.board[i].length && j >= 0)
 }
 
-Board.prototype.canJump = function (piece, moveDirectionI, moveDirectionJ) {
+GameManager.prototype.canJump = function (piece, moveDirectionI, moveDirectionJ) {
 	var board = this.board;
 	var opposingPlayer;
 	if (piece.owner === this.topPlayer) {
@@ -223,14 +223,14 @@ Board.prototype.canJump = function (piece, moveDirectionI, moveDirectionJ) {
 	  board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2 * moveDirectionJ].owner === undefined
 }
 
-Board.prototype.canSimpleMove = function (piece, moveDirectionI, moveDirectionJ) {
+GameManager.prototype.canSimpleMove = function (piece, moveDirectionI, moveDirectionJ) {
 	var board = this.board;
 
 	return this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1 * moveDirectionJ) &&
 		board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1 * moveDirectionJ].owner === undefined
 }
 
-Board.prototype.jumpsAndMovesFor = function(piece, moveDirectionI) {
+GameManager.prototype.jumpsAndMovesFor = function(piece, moveDirectionI) {
 	var validSquares = [];
 	var board = this.board;
 
@@ -258,7 +258,7 @@ Board.prototype.jumpsAndMovesFor = function(piece, moveDirectionI) {
 }
 
 // TODO: DRY THIS UP
-Board.prototype.allValidDestinationSquaresFor = function (piece) {
+GameManager.prototype.allValidDestinationSquaresFor = function (piece) {
 	// Basic top player pieces can only move downward,
 	// Basic bottom player can only move upward
 	var validSquares = [];
@@ -280,6 +280,6 @@ Board.prototype.allValidDestinationSquaresFor = function (piece) {
 	return validSquares;
 }
 
-Board.prototype.showCurrentPlayerName = function () {
+GameManager.prototype.showCurrentPlayerName = function () {
 	document.getElementById('current-player-wrapper').innerHTML = this.currentPlayer.name + "'s move";
 }

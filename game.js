@@ -12,37 +12,37 @@ var startGame = function () {
 
 	var topPlayer = new Player('X');
 	var bottomPlayer = new Player('O');
-	var board = new Board(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
+	var gameManager = new GameManager(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
 
-	board.drawBlank();
-	board.setPiecesWithoutDrawing();
-	board.setClickHandlersOnSquares();
+	gameManager.drawBlankCellsOnScreen();
+	gameManager.populateBoardWithPieces();
+	gameManager.setClickHandlersOnSquares();
 
 	var then = Date.now();
 
 	// Game loop
-	board.loop = setInterval(function () {
-		board.drawBoardWithPieces();
-		board.showCurrentPlayerName();
+	gameManager.loop = setInterval(function () {
+		gameManager.drawPieces();
+		gameManager.showCurrentPlayerName();
 
 		// Check if game is over
-		var loser = board.returnLoser();
+		var loser = gameManager.returnLoser();
 		if (loser !== undefined) {
 			endGame(board, loser);
 		}
 		var now = Date.now();
-		board.loopTimeElapsed = (now - then) / 1000;
+		gameManager.loopTimeElapsed = (now - then) / 1000;
 		then = now;
 	}, 10); // Execute as fast as possible
 }
 
 var endGame = function (board, loser) {
-	board.state = "gameOver";
-	if (loser === board.topPlayer) {
-		alert(board.bottomPlayer.name + " player wins!");
+	gameManager.state = "gameOver";
+	if (loser === gameManager.topPlayer) {
+		alert(gameManager.bottomPlayer.name + " player wins!");
 	} else {
-		alert(board.topPlayer.name + " player wins!");
+		alert(gameManager.topPlayer.name + " player wins!");
 	}
-	clearInterval(board.loop);
+	clearInterval(gameManager.loop);
 	$('.reset-link').show();
 }
