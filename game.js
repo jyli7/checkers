@@ -1,6 +1,17 @@
-window.onload = function () {
-	var topPlayer = new Player('top');
-	var bottomPlayer = new Player('bottom');
+$(document).ready(function () {
+	startGame();
+
+	$('.reset-link').on('click', function (e) {
+		console.log("here");
+		e.preventDefault();
+		startGame();
+	});
+});
+
+var startGame = function () {
+	$('.reset-link').hide();
+	var topPlayer = new Player('X');
+	var bottomPlayer = new Player('O');
 	var board = new Board(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
 	board.drawBlank();
 	board.setPiecesWithoutDrawing();
@@ -12,14 +23,21 @@ window.onload = function () {
 		board.drawCurrentPlayerName();
 		var loser = board.returnLoser();
 		if (loser !== undefined) {
-			console.log("GAME OVER")
 			board.state = "gameOver";
+			if (loser === topPlayer) {
+				alert(bottomPlayer.name + " player wins!");
+			} else {
+				alert(topPlayer.name + " player wins!");
+			}
+			clearInterval(board.loop);
+			$('.reset-link').show();
 		}
 		var now = Date.now();
 		board.loopTimeElapsed = (now - then) / 1000;
 		then = now;
 	}, 10); // Execute as fast as possible
 }
+
 
 var Board = function (rows, cols, wrapperId, topPlayer, bottomPlayer) {
 	this.rows = rows;

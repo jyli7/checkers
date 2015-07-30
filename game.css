@@ -41,3 +41,7 @@ td {
 #current-player-wrapper {
 	float: right;
 }
+
+.hidden {
+	display: none;
+}
