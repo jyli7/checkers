@@ -134,8 +134,7 @@ GameManager.prototype.cellClickedFn = function (e) {
 		}
 	} else if (gameManager.state === "movePiece") {
 		if (gameManager.moveIsValid(i, j)) {
-			gameManager.movePiece();
-			
+			gameManager.movePiece(i, j);
 		} else if (gameManager.selectedPiece.iPos === i && gameManager.selectedPiece.jPos === j) {
 			$('.selected').removeClass('selected');
 			$('.possibleDestination').removeClass('possibleDestination');
@@ -146,10 +145,10 @@ GameManager.prototype.cellClickedFn = function (e) {
 }
 
 GameManager.prototype.moveIsValid = function (i, j) {
-	containsArray(this.board.validDestinationCoordsForSelected, [i, j]);
+	return containsArray(this.board.validDestinationCoordsForSelected, [i, j]);
 }
 
-GameManager.prototype.movePiece = function () {
+GameManager.prototype.movePiece = function (i, j) {
 	var origOwner = this.selectedPiece.owner;
 	var origKing = this.selectedPiece.king;
 	var origI = this.selectedPiece.iPos;
@@ -159,13 +158,13 @@ GameManager.prototype.movePiece = function () {
 	this.updateKingship(i, j, origI, origJ);
 	this.updateCellOwnership(i, j, origI, origJ);
 	
-	gameManager.switchPlayer();
-	gameManager.state = "selectPiece";
+	this.switchPlayer();
+	this.state = "selectPiece";
 	$('.selected').removeClass('selected');
 	$('.possibleDestination').removeClass('possibleDestination');
 }
 
-GameManager.clearDeadPieces = function (i, j, origI, origJ) {
+GameManager.prototype.clearDeadPieces = function (i, j, origI, origJ) {
 	var board = this.board;
 
 	if (Math.abs(i - origI) > 1) {
@@ -185,8 +184,10 @@ GameManager.clearDeadPieces = function (i, j, origI, origJ) {
 	}
 }
 
-GameManager.updateKingship = function (i, j, origI, origJ) {
+GameManager.prototype.updateKingship = function (i, j, origI, origJ) {
 	var board = this.board;
+	var origOwner = this.selectedPiece.owner;
+	var origKing = this.selectedPiece.king;
 
 	board[origI][origJ].king = false;
 	board[i][j].king = origKing;
@@ -205,7 +206,10 @@ GameManager.updateKingship = function (i, j, origI, origJ) {
 	}
 }
 
-GameManager.updateCellOwnership = function (i, j, origI, origJ) {
+GameManager.prototype.updateCellOwnership = function (i, j, origI, origJ) {
+	var origOwner = this.selectedPiece.owner;
+	var origKing = this.selectedPiece.king;
+
 	var board = this.board;
 	board[origI][origJ].owner = undefined;
 	board[i][j].owner = origOwner;
