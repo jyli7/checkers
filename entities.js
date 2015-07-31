@@ -24,8 +24,8 @@ var GameManager = function (numRows, numCols, wrapperId, topPlayer, bottomPlayer
 	this.state = "selectPiece";
 };
 
-// Functions that set up pieces and board
-/////////////////////////////////////////
+// Functions related to visuals
+///////////////////////////////
 
 GameManager.prototype.drawBlankCellsOnScreen = function () {
 	var tableHTML = "<table id=" + 'game-board' + ">"
@@ -47,7 +47,47 @@ GameManager.prototype.drawBlankCellsOnScreen = function () {
 	document.getElementById(this.wrapperId).innerHTML = tableHTML;	
 }
 
-GameManager.prototype.populateBoardWithPieces = function () {
+GameManager.prototype.drawPieces = function () {
+	var topPlayer = this.topPlayer;
+	var bottomPlayer = this.bottomPlayer;
+	for (var i = 0; i < this.numRows; i++) {
+		for (var j = 0; j < this.numCols; j++) {
+			if (this.board[i][j].owner === topPlayer) {
+				if (this.board[i][j].king) {
+					document.getElementById(i + '-' + j).innerHTML = "X!";
+				} else {
+					document.getElementById(i + '-' + j).innerHTML = "X";
+				}
+			} else if (this.board[i][j].owner === bottomPlayer) {
+				if (this.board[i][j].king) {
+					document.getElementById(i + '-' + j).innerHTML = "O!";
+				} else {
+					document.getElementById(i + '-' + j).innerHTML = "O";
+				}
+			} else {
+				document.getElementById(i + '-' + j).innerHTML = "";
+			}
+		}
+	}
+}
+
+GameManager.prototype.showCurrentPlayerName = function () {
+	document.getElementById('current-player-wrapper').innerHTML = this.currentPlayer.name + "'s move";
+}
+
+GameManager.prototype.updateVisuals = function () {
+	$('.selected').removeClass('selected');
+}
+
+GameManager.prototype.initiateSelectedCellVisual = function (i, j) {
+	var selectedCell = $('#' + i + "-" + j);
+	selectedCell.addClass('selected');
+}
+
+// Functions that set up pieces and board
+/////////////////////////////////////////
+
+GameManager.prototype.populateVirtualBoardWithPieces = function () {
 	var topPlayer = this.topPlayer;
 	var bottomPlayer = this.bottomPlayer;
 	var countForPlacement = 0;
@@ -91,13 +131,13 @@ GameManager.prototype.cellClicked = function (e) {
 
 		if (this.currentPlayer === this.selectedPiece.owner) {
 			this.initiateSelectedCellVisual(i, j)
-			this.setValidationDestinationCoords(this.selectedPiece, i, j)
+			this.setValidDestinationCoords(this.selectedPiece, i, j)
 			this.state = "movePiece";
 		}
 	} else if (this.state === "movePiece") {
 		if (this.moveIsValid(i, j)) {
 			this.movePiece(i, j);
-		} else if (this.clickedSelectedPiece(i, j)) {
+		} else if (this.reclickedAlreadySelectedPiece(i, j)) {
 			$('.selected').removeClass('selected');
 			this.selectedPiece = undefined;
 			this.state = "selectPiece";
@@ -105,71 +145,17 @@ GameManager.prototype.cellClicked = function (e) {
 	}
 }
 
-GameManager.prototype.initiateSelectedCellVisual = function (i, j) {
-	var selectedCell = $('#' + i + "-" + j);
-	selectedCell.addClass('selected');
-}
-
-GameManager.prototype.setValidationDestinationCoords = function (selectedPiece, i, j) {
+GameManager.prototype.setValidDestinationCoords = function (selectedPiece, i, j) {
 	this.validDestinationSquares = this.allValidDestinationSquaresFor(selectedPiece);
 	this.validDestinationCoordsForSelected = this.validDestinationSquares.map(function (obj) {
 		return [obj.iPos, obj.jPos];
 	});
 }
 
-GameManager.prototype.drawPieces = function () {
-	var topPlayer = this.topPlayer;
-	var bottomPlayer = this.bottomPlayer;
-	for (var i = 0; i < this.numRows; i++) {
-		for (var j = 0; j < this.numCols; j++) {
-			if (this.board[i][j].owner === topPlayer) {
-				if (this.board[i][j].king) {
-					document.getElementById(i + '-' + j).innerHTML = "X!";
-				} else {
-					document.getElementById(i + '-' + j).innerHTML = "X";
-				}
-			} else if (this.board[i][j].owner === bottomPlayer) {
-				if (this.board[i][j].king) {
-					document.getElementById(i + '-' + j).innerHTML = "O!";
-				} else {
-					document.getElementById(i + '-' + j).innerHTML = "O";
-				}
-			} else {
-				document.getElementById(i + '-' + j).innerHTML = "";
-			}
-		}
-	}
-}
-
-GameManager.prototype.returnLoser = function () {
-	var topPlayer = this.topPlayer;
-	var bottomPlayer = this.bottomPlayer;
-	var topPlayerAlive = false;
-	var bottomPlayerAlive = false;
-
-	for (var i = 0; i < this.numRows; i++) {
-		for (var j = 0; j < this.numCols; j++) {
-			if (this.board[i][j].owner === topPlayer) {
-				topPlayerAlive = true;
-			} else if (this.board[i][j].owner === bottomPlayer) {
-				bottomPlayerAlive = true;
-			}
-		}
-	}
-
-	if (!topPlayerAlive) {
-		return topPlayer;
-	} else if (!bottomPlayerAlive) {
-		return bottomPlayer
-	} else {
-		return undefined;
-	}
-}
-
 // Movement related functions
 /////////////////////////////
 
-GameManager.prototype.clickedSelectedPiece = function (i, j) {
+GameManager.prototype.reclickedAlreadySelectedPiece = function (i, j) {
 	return this.selectedPiece.iPos === i && this.selectedPiece.jPos === j
 }
 
@@ -322,13 +308,30 @@ GameManager.prototype.allValidDestinationSquaresFor = function (piece) {
 	return validSquares;
 }
 
-// Functions related to visuals
-///////////////////////////////
+// Game completion logic
+////////////////////////
 
-GameManager.prototype.showCurrentPlayerName = function () {
-	document.getElementById('current-player-wrapper').innerHTML = this.currentPlayer.name + "'s move";
-}
+GameManager.prototype.returnLoser = function () {
+	var topPlayer = this.topPlayer;
+	var bottomPlayer = this.bottomPlayer;
+	var topPlayerAlive = false;
+	var bottomPlayerAlive = false;
 
-GameManager.prototype.updateVisuals = function () {
-	$('.selected').removeClass('selected');
+	for (var i = 0; i < this.numRows; i++) {
+		for (var j = 0; j < this.numCols; j++) {
+			if (this.board[i][j].owner === topPlayer) {
+				topPlayerAlive = true;
+			} else if (this.board[i][j].owner === bottomPlayer) {
+				bottomPlayerAlive = true;
+			}
+		}
+	}
+
+	if (!topPlayerAlive) {
+		return topPlayer;
+	} else if (!bottomPlayerAlive) {
+		return bottomPlayer
+	} else {
+		return undefined;
+	}
 }

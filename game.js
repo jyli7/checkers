@@ -15,7 +15,7 @@ var startGame = function () {
 	var gameManager = new GameManager(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
 
 	gameManager.drawBlankCellsOnScreen();
-	gameManager.populateBoardWithPieces();
+	gameManager.populateVirtualBoardWithPieces();
 	gameManager.setClickHandlersOnSquares();
 
 	var then = Date.now();
