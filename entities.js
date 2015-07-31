@@ -82,9 +82,17 @@ GameManager.prototype.drawPieces = function () {
 	for (var i = 0; i < this.numRows; i++) {
 		for (var j = 0; j < this.numCols; j++) {
 			if (this.board[i][j].owner === topPlayer) {
-				document.getElementById(i + '-' + j).innerHTML = "X";
+				if (this.board[i][j].king) {
+					document.getElementById(i + '-' + j).innerHTML = "X!";
+				} else {
+					document.getElementById(i + '-' + j).innerHTML = "X";
+				}
 			} else if (this.board[i][j].owner === bottomPlayer) {
-				document.getElementById(i + '-' + j).innerHTML = "O";
+				if (this.board[i][j].king) {
+					document.getElementById(i + '-' + j).innerHTML = "O!";
+				} else {
+					document.getElementById(i + '-' + j).innerHTML = "O";
+				}
 			} else {
 				document.getElementById(i + '-' + j).innerHTML = "";
 			}
@@ -157,11 +165,9 @@ GameManager.prototype.movePiece = function (i, j) {
 	this.clearDeadPieces(i, j, origI, origJ);
 	this.updateKingship(i, j, origI, origJ);
 	this.updateCellOwnership(i, j, origI, origJ);
-	
+	this.updateVisuals();
 	this.switchPlayer();
 	this.state = "selectPiece";
-	$('.selected').removeClass('selected');
-	$('.possibleDestination').removeClass('possibleDestination');
 }
 
 GameManager.prototype.clearDeadPieces = function (i, j, origI, origJ) {
@@ -184,6 +190,11 @@ GameManager.prototype.clearDeadPieces = function (i, j, origI, origJ) {
 	}
 }
 
+GameManager.prototype.updateVisuals = function () {
+	$('.selected').removeClass('selected');
+	$('.possibleDestination').removeClass('possibleDestination');
+}
+
 GameManager.prototype.updateKingship = function (i, j, origI, origJ) {
 	var board = this.board;
 	var origOwner = this.selectedPiece.owner;
@@ -195,12 +206,10 @@ GameManager.prototype.updateKingship = function (i, j, origI, origJ) {
 	// If we're at the back of the board, king the piece
 	if (this.selectedPiece.owner === this.topPlayer) {
 		if (i === this.numRows - 1) {
-			console.log("kinged!");
 			board[i][j].king = true;
 		}
 	} else if (this.selectedPiece.owner === this.bottomPlayer) {
 		if (i === 0) {
-			console.log("kinged!");
 			board[i][j].king = true;
 		}
 	}
