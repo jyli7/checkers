@@ -28,16 +28,16 @@ var startGame = function () {
 		// Check if game is over
 		var loser = gameManager.returnLoser();
 		if (loser !== undefined) {
-			endGame(board, loser);
+			endGame(gameManager, loser);
 		}
+
 		var now = Date.now();
 		gameManager.loopTimeElapsed = (now - then) / 1000;
 		then = now;
 	}, 10); // Execute as fast as possible
 }
 
-var endGame = function (board, loser) {
-	gameManager.state = "gameOver";
+var endGame = function (gameManager, loser) {
 	if (loser === gameManager.topPlayer) {
 		alert(gameManager.bottomPlayer.name + " player wins!");
 	} else {

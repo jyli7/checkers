@@ -44,7 +44,7 @@ GameManager.prototype.drawBlankCellsOnScreen = function () {
 	document.getElementById(this.wrapperId).innerHTML = tableHTML;	
 }
 
-GameManager.prototype.populateWithPieces = function () {
+GameManager.prototype.populateBoardWithPieces = function () {
 	var topPlayer = this.topPlayer;
 	var bottomPlayer = this.bottomPlayer;
 	var countForPlacement = 0;
@@ -70,7 +70,7 @@ GameManager.prototype.setClickHandlersOnSquares = function () {
 		for (var j = 0; j < this.numRows; j++) {
 			var pieceCell = document.getElementById(i + '-' + j);
 			pieceCell.addEventListener("click", function (e) {
-				that.generalPieceCellClickedFunction(e, that);
+				that.cellClickedFn(e);
 			});
 		}
 	}
@@ -117,83 +117,113 @@ GameManager.prototype.returnLoser = function () {
 	}
 }
 
-
-GameManager.prototype.generalPieceCellClickedFunction = function (e, higherLevelBoard) {
-	var board = higherLevelBoard.board;
+GameManager.prototype.cellClickedFn = function (e) {
+	var gameManager = this;
+	var board = gameManager.board;
 	var clickedCellId = e.target.id;
 	var clickedCellCoords = clickedCellId.split("-");
 	var i = parseInt(clickedCellCoords[0]);
 	var j = parseInt(clickedCellCoords[1]);
 
+	if (gameManager.state === "selectPiece") {
+		gameManager.selectedPiece = board[i][j];
 
-	if (higherLevelBoard.state === "selectPiece") {
-		higherLevelBoard.selectedPiece = board[i][j];
-		if (higherLevelBoard.currentPlayer === higherLevelBoard.selectedPiece.owner) {
-			higherLevelBoard.validDestinationSquares = this.allValidDestinationSquaresFor(this.selectedPiece);
-			higherLevelBoard.state = "movePiece";
-			var selectedCell = $('#' + i + "-" + j);
-			selectedCell.addClass('selected');
-			board.validDestinationCoordsForSelected = higherLevelBoard.validDestinationSquares.map(function (obj) {
-				return [obj.iPos, obj.jPos];
-			});
-			board.validDestinationCoordsForSelected.forEach(function (coords) {
-				var possibleDestinationCell = $('#' + coords[0] + "-" + coords[1]);
-				possibleDestinationCell.addClass("possibleDestination");
-			});
+		// If the clicker owns the piece...
+		if (gameManager.currentPlayer === gameManager.selectedPiece.owner) {
+			gameManager.pieceClickedFn(this.selectedPiece, i, j);
 		}
-	} else if (higherLevelBoard.state === "movePiece") {
-		if (looseContains(board.validDestinationCoordsForSelected, [i, j])) {
-			var origOwner = higherLevelBoard.selectedPiece.owner;
-			var origKing = higherLevelBoard.selectedPiece.king;
-			var origI = higherLevelBoard.selectedPiece.iPos;
-			var origJ = higherLevelBoard.selectedPiece.jPos;
-			// If we're jumping, clear the opponent's piece
-			if (Math.abs(i - origI) > 1) {
-				if (i < origI) {
-					if (j < origJ) {
-						board[i + 1][j + 1].owner = undefined;
-					} else if (j > origJ) {
-						board[i + 1][j - 1].owner = undefined;
-					}
-				} else {
-					if (j < origJ) {
-						board[i - 1][j + 1].owner = undefined;
-					} else if (j > origJ) {
-						board[i - 1][j - 1].owner = undefined;
-					}
-				}
-			}
-
-			board[origI][origJ].king = false;
-			board[i][j].king = origKing;
-
-			// If we're at the back of the board, king the piece
-			if (higherLevelBoard.selectedPiece.owner === higherLevelBoard.topPlayer) {
-				if (i === higherLevelBoard.numRows - 1) {
-					console.log("kinged!");
-					board[i][j].king = true;
-				}
-			} else if (higherLevelBoard.selectedPiece.owner === higherLevelBoard.bottomPlayer) {
-				if (i === 0) {
-					console.log("kinged!");
-					board[i][j].king = true;
-				}
-			}
-
-			board[origI][origJ].owner = undefined;
-			board[i][j].owner = origOwner;
-			higherLevelBoard.switchPlayer();
-			higherLevelBoard.state = "selectPiece";
+	} else if (gameManager.state === "movePiece") {
+		if (gameManager.moveIsValid(i, j)) {
+			gameManager.movePiece();
+			
+		} else if (gameManager.selectedPiece.iPos === i && gameManager.selectedPiece.jPos === j) {
 			$('.selected').removeClass('selected');
 			$('.possibleDestination').removeClass('possibleDestination');
-		} else if (higherLevelBoard.selectedPiece.iPos === i && higherLevelBoard.selectedPiece.jPos === j) {
-			$('.selected').removeClass('selected');
-			$('.possibleDestination').removeClass('possibleDestination');
-			higherLevelBoard.selectedPiece = undefined;
-			higherLevelBoard.state = "selectPiece";
+			gameManager.selectedPiece = undefined;
+			gameManager.state = "selectPiece";
 		}
 	}
+}
 
+GameManager.prototype.moveIsValid = function (i, j) {
+	containsArray(this.board.validDestinationCoordsForSelected, [i, j]);
+}
+
+GameManager.prototype.movePiece = function () {
+	var origOwner = this.selectedPiece.owner;
+	var origKing = this.selectedPiece.king;
+	var origI = this.selectedPiece.iPos;
+	var origJ = this.selectedPiece.jPos;
+
+	this.clearDeadPieces(i, j, origI, origJ);
+	this.updateKingship(i, j, origI, origJ);
+	this.updateCellOwnership(i, j, origI, origJ);
+	
+	gameManager.switchPlayer();
+	gameManager.state = "selectPiece";
+	$('.selected').removeClass('selected');
+	$('.possibleDestination').removeClass('possibleDestination');
+}
+
+GameManager.clearDeadPieces = function (i, j, origI, origJ) {
+	var board = this.board;
+
+	if (Math.abs(i - origI) > 1) {
+		if (i < origI) {
+			if (j < origJ) {
+				board[i + 1][j + 1].owner = undefined;
+			} else if (j > origJ) {
+				board[i + 1][j - 1].owner = undefined;
+			}
+		} else {
+			if (j < origJ) {
+				board[i - 1][j + 1].owner = undefined;
+			} else if (j > origJ) {
+				board[i - 1][j - 1].owner = undefined;
+			}
+		}
+	}
+}
+
+GameManager.updateKingship = function (i, j, origI, origJ) {
+	var board = this.board;
+
+	board[origI][origJ].king = false;
+	board[i][j].king = origKing;
+
+	// If we're at the back of the board, king the piece
+	if (this.selectedPiece.owner === this.topPlayer) {
+		if (i === this.numRows - 1) {
+			console.log("kinged!");
+			board[i][j].king = true;
+		}
+	} else if (this.selectedPiece.owner === this.bottomPlayer) {
+		if (i === 0) {
+			console.log("kinged!");
+			board[i][j].king = true;
+		}
+	}
+}
+
+GameManager.updateCellOwnership = function (i, j, origI, origJ) {
+	var board = this.board;
+	board[origI][origJ].owner = undefined;
+	board[i][j].owner = origOwner;
+}
+
+GameManager.prototype.pieceClickedFn = function (selectedPiece, i, j) {
+	var board = this.board;
+	this.validDestinationSquares = this.allValidDestinationSquaresFor(selectedPiece);
+	this.state = "movePiece";
+	var selectedCell = $('#' + i + "-" + j);
+	selectedCell.addClass('selected');
+	board.validDestinationCoordsForSelected = this.validDestinationSquares.map(function (obj) {
+		return [obj.iPos, obj.jPos];
+	});
+	board.validDestinationCoordsForSelected.forEach(function (coords) {
+		var possibleDestinationCell = $('#' + coords[0] + "-" + coords[1]);
+		possibleDestinationCell.addClass("possibleDestination");
+	});
 }
 
 GameManager.prototype.switchPlayer = function () {

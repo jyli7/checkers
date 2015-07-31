@@ -1,7 +1,7 @@
-function looseContains(a, obj) {
-  var i = a.length;
+function containsArray(arrayOfArrays, array) {
+  var i = arrayOfArrays.length;
   while (i--) {
-     if (a[i].toString() == obj.toString()) {
+     if (arrayOfArrays[i].toString() == array.toString()) {
          return true;
      }
   }
