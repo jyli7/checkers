@@ -24,6 +24,9 @@ var GameManager = function (numRows, numCols, wrapperId, topPlayer, bottomPlayer
 	this.state = "selectPiece";
 };
 
+// Functions that set up pieces and board
+/////////////////////////////////////////
+
 GameManager.prototype.drawBlankCellsOnScreen = function () {
 	var tableHTML = "<table id=" + 'game-board' + ">"
 	var countForColor = 0
@@ -76,6 +79,44 @@ GameManager.prototype.setClickHandlersOnSquares = function () {
 	}
 }
 
+GameManager.prototype.cellClicked = function (e) {
+	var board = this.board;
+	var clickedCellId = e.target.id;
+	var clickedCellCoords = clickedCellId.split("-");
+	var i = parseInt(clickedCellCoords[0]);
+	var j = parseInt(clickedCellCoords[1]);
+
+	if (this.state === "selectPiece") {
+		this.selectedPiece = board[i][j];
+
+		if (this.currentPlayer === this.selectedPiece.owner) {
+			this.initiateSelectedCellVisual(i, j)
+			this.setValidationDestinationCoords(this.selectedPiece, i, j)
+			this.state = "movePiece";
+		}
+	} else if (this.state === "movePiece") {
+		if (this.moveIsValid(i, j)) {
+			this.movePiece(i, j);
+		} else if (this.clickedSelectedPiece(i, j)) {
+			$('.selected').removeClass('selected');
+			this.selectedPiece = undefined;
+			this.state = "selectPiece";
+		}
+	}
+}
+
+GameManager.prototype.initiateSelectedCellVisual = function (i, j) {
+	var selectedCell = $('#' + i + "-" + j);
+	selectedCell.addClass('selected');
+}
+
+GameManager.prototype.setValidationDestinationCoords = function (selectedPiece, i, j) {
+	this.validDestinationSquares = this.allValidDestinationSquaresFor(selectedPiece);
+	this.validDestinationCoordsForSelected = this.validDestinationSquares.map(function (obj) {
+		return [obj.iPos, obj.jPos];
+	});
+}
+
 GameManager.prototype.drawPieces = function () {
 	var topPlayer = this.topPlayer;
 	var bottomPlayer = this.bottomPlayer;
@@ -125,37 +166,15 @@ GameManager.prototype.returnLoser = function () {
 	}
 }
 
-GameManager.prototype.cellClicked = function (e) {
-	var gameManager = this;
-	var board = gameManager.board;
-	var clickedCellId = e.target.id;
-	var clickedCellCoords = clickedCellId.split("-");
-	var i = parseInt(clickedCellCoords[0]);
-	var j = parseInt(clickedCellCoords[1]);
-
-	if (gameManager.state === "selectPiece") {
-		gameManager.selectedPiece = board[i][j];
-
-		if (gameManager.currentPlayer === gameManager.selectedPiece.owner) {
-			gameManager.pieceSelectedFn(this.selectedPiece, i, j);
-		}
-	} else if (gameManager.state === "movePiece") {
-		if (gameManager.moveIsValid(i, j)) {
-			gameManager.movePiece(i, j);
-		} else if (gameManager.clickedSelectedPiece(i, j)) {
-			$('.selected').removeClass('selected');
-			gameManager.selectedPiece = undefined;
-			gameManager.state = "selectPiece";
-		}
-	}
-}
-
-GameManager.prototype.moveIsValid = function (i, j) {
-	return containsArray(this.board.validDestinationCoordsForSelected, [i, j]);
-}
+// Movement related functions
+/////////////////////////////
 
 GameManager.prototype.clickedSelectedPiece = function (i, j) {
 	return this.selectedPiece.iPos === i && this.selectedPiece.jPos === j
+}
+
+GameManager.prototype.moveIsValid = function (i, j) {
+	return containsArray(this.validDestinationCoordsForSelected, [i, j]);
 }
 
 GameManager.prototype.movePiece = function (i, j) {
@@ -192,10 +211,6 @@ GameManager.prototype.clearDeadPieces = function (i, j, origI, origJ) {
 	}
 }
 
-GameManager.prototype.updateVisuals = function () {
-	$('.selected').removeClass('selected');
-}
-
 GameManager.prototype.updateKingship = function (i, j, origI, origJ) {
 	var board = this.board;
 	var origOwner = this.selectedPiece.owner;
@@ -225,16 +240,6 @@ GameManager.prototype.updateCellOwnership = function (i, j, origI, origJ) {
 	board[i][j].owner = origOwner;
 }
 
-GameManager.prototype.pieceSelectedFn = function (selectedPiece, i, j) {
-	var board = this.board;
-	this.validDestinationSquares = this.allValidDestinationSquaresFor(selectedPiece);
-	this.state = "movePiece";
-	var selectedCell = $('#' + i + "-" + j);
-	selectedCell.addClass('selected');
-	board.validDestinationCoordsForSelected = this.validDestinationSquares.map(function (obj) {
-		return [obj.iPos, obj.jPos];
-	});
-}
 
 GameManager.prototype.switchPlayer = function () {
 	if (this.currentPlayer === this.topPlayer) {
@@ -246,28 +251,6 @@ GameManager.prototype.switchPlayer = function () {
 
 GameManager.prototype.cellOnBoard = function (i, j) {
 	return (i < this.board.length && i >= 0) && (j < this.board[i].length && j >= 0)
-}
-
-GameManager.prototype.canJump = function (piece, moveDirectionI, moveDirectionJ) {
-	var board = this.board;
-	var opposingPlayer;
-	if (piece.owner === this.topPlayer) {
-		opposingPlayer = this.bottomPlayer;	
-	} else {
-		opposingPlayer = this.topPlayer;
-	}
-
-	return this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1 * moveDirectionJ) &&
-		this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos + 2 * moveDirectionJ) &&
-	  board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1 * moveDirectionJ].owner === opposingPlayer &&
-	  board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2 * moveDirectionJ].owner === undefined
-}
-
-GameManager.prototype.canSimpleMove = function (piece, moveDirectionI, moveDirectionJ) {
-	var board = this.board;
-
-	return this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1 * moveDirectionJ) &&
-		board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1 * moveDirectionJ].owner === undefined
 }
 
 GameManager.prototype.jumpsAndMovesFor = function(piece, moveDirectionI) {
@@ -297,10 +280,30 @@ GameManager.prototype.jumpsAndMovesFor = function(piece, moveDirectionI) {
 	return validSquares
 }
 
-// TODO: DRY THIS UP
+GameManager.prototype.canJump = function (piece, moveDirectionI, moveDirectionJ) {
+	var board = this.board;
+	var opposingPlayer;
+	if (piece.owner === this.topPlayer) {
+		opposingPlayer = this.bottomPlayer;	
+	} else {
+		opposingPlayer = this.topPlayer;
+	}
+
+	return this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1 * moveDirectionJ) &&
+		this.cellOnBoard(piece.iPos + 2 * moveDirectionI, piece.jPos + 2 * moveDirectionJ) &&
+	  board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1 * moveDirectionJ].owner === opposingPlayer &&
+	  board[piece.iPos + 2 * moveDirectionI][piece.jPos + 2 * moveDirectionJ].owner === undefined
+}
+
+GameManager.prototype.canSimpleMove = function (piece, moveDirectionI, moveDirectionJ) {
+	var board = this.board;
+
+	return this.cellOnBoard(piece.iPos + 1 * moveDirectionI, piece.jPos + 1 * moveDirectionJ) &&
+		board[piece.iPos + 1 * moveDirectionI][piece.jPos + 1 * moveDirectionJ].owner === undefined
+}
+
+
 GameManager.prototype.allValidDestinationSquaresFor = function (piece) {
-	// Basic top player pieces can only move downward,
-	// Basic bottom player can only move upward
 	var validSquares = [];
 	var moveDirection;
 	var board = this.board;
@@ -316,10 +319,16 @@ GameManager.prototype.allValidDestinationSquaresFor = function (piece) {
 		moveDirectionI *= -1;
 		validSquares = validSquares.concat(this.jumpsAndMovesFor(piece, moveDirectionI))
 	}
-
 	return validSquares;
 }
 
+// Functions related to visuals
+///////////////////////////////
+
 GameManager.prototype.showCurrentPlayerName = function () {
 	document.getElementById('current-player-wrapper').innerHTML = this.currentPlayer.name + "'s move";
+}
+
+GameManager.prototype.updateVisuals = function () {
+	$('.selected').removeClass('selected');
 }
