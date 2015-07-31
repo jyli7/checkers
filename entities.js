@@ -70,7 +70,7 @@ GameManager.prototype.setClickHandlersOnSquares = function () {
 		for (var j = 0; j < this.numRows; j++) {
 			var pieceCell = document.getElementById(i + '-' + j);
 			pieceCell.addEventListener("click", function (e) {
-				that.cellClickedFn(e);
+				that.cellClicked(e);
 			});
 		}
 	}
@@ -125,7 +125,7 @@ GameManager.prototype.returnLoser = function () {
 	}
 }
 
-GameManager.prototype.cellClickedFn = function (e) {
+GameManager.prototype.cellClicked = function (e) {
 	var gameManager = this;
 	var board = gameManager.board;
 	var clickedCellId = e.target.id;
@@ -136,16 +136,14 @@ GameManager.prototype.cellClickedFn = function (e) {
 	if (gameManager.state === "selectPiece") {
 		gameManager.selectedPiece = board[i][j];
 
-		// If the clicker owns the piece...
 		if (gameManager.currentPlayer === gameManager.selectedPiece.owner) {
-			gameManager.pieceClickedFn(this.selectedPiece, i, j);
+			gameManager.pieceSelectedFn(this.selectedPiece, i, j);
 		}
 	} else if (gameManager.state === "movePiece") {
 		if (gameManager.moveIsValid(i, j)) {
 			gameManager.movePiece(i, j);
-		} else if (gameManager.selectedPiece.iPos === i && gameManager.selectedPiece.jPos === j) {
+		} else if (gameManager.clickedSelectedPiece(i, j)) {
 			$('.selected').removeClass('selected');
-			$('.possibleDestination').removeClass('possibleDestination');
 			gameManager.selectedPiece = undefined;
 			gameManager.state = "selectPiece";
 		}
@@ -154,6 +152,10 @@ GameManager.prototype.cellClickedFn = function (e) {
 
 GameManager.prototype.moveIsValid = function (i, j) {
 	return containsArray(this.board.validDestinationCoordsForSelected, [i, j]);
+}
+
+GameManager.prototype.clickedSelectedPiece = function (i, j) {
+	return this.selectedPiece.iPos === i && this.selectedPiece.jPos === j
 }
 
 GameManager.prototype.movePiece = function (i, j) {
@@ -192,7 +194,6 @@ GameManager.prototype.clearDeadPieces = function (i, j, origI, origJ) {
 
 GameManager.prototype.updateVisuals = function () {
 	$('.selected').removeClass('selected');
-	$('.possibleDestination').removeClass('possibleDestination');
 }
 
 GameManager.prototype.updateKingship = function (i, j, origI, origJ) {
@@ -224,7 +225,7 @@ GameManager.prototype.updateCellOwnership = function (i, j, origI, origJ) {
 	board[i][j].owner = origOwner;
 }
 
-GameManager.prototype.pieceClickedFn = function (selectedPiece, i, j) {
+GameManager.prototype.pieceSelectedFn = function (selectedPiece, i, j) {
 	var board = this.board;
 	this.validDestinationSquares = this.allValidDestinationSquaresFor(selectedPiece);
 	this.state = "movePiece";
@@ -232,10 +233,6 @@ GameManager.prototype.pieceClickedFn = function (selectedPiece, i, j) {
 	selectedCell.addClass('selected');
 	board.validDestinationCoordsForSelected = this.validDestinationSquares.map(function (obj) {
 		return [obj.iPos, obj.jPos];
-	});
-	board.validDestinationCoordsForSelected.forEach(function (coords) {
-		var possibleDestinationCell = $('#' + coords[0] + "-" + coords[1]);
-		possibleDestinationCell.addClass("possibleDestination");
 	});
 }
 
