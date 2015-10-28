@@ -12,7 +12,7 @@ var startGame = function () {
 
 	var topPlayer = new Player('X');
 	var bottomPlayer = new Player('O');
-	var gameManager = new GameManager(4, 4, 'board-wrapper', topPlayer, bottomPlayer)
+	var gameManager = new GameManager(8, 8, 'board-wrapper', topPlayer, bottomPlayer)
 
 	gameManager.drawBlankCellsOnScreen();
 	gameManager.populateVirtualBoardWithPieces();
